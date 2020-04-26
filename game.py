@@ -105,10 +105,10 @@ def game():
         if not blob.jumping:
             blob.fall()
         else:
-            if jumpCount <= jumpLimit:
-                print(jumpCount, jumpLimit)
-                blob.fallVel = 1
-                blob.jump()
+            #if jumpCount <= jumpLimit:
+            print(jumpCount, jumpLimit)
+            blob.fallVel = 1
+            blob.jump()
     
         # --- Screen-clearing code goes here
         for x in bg:
