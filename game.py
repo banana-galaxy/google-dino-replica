@@ -9,10 +9,13 @@ class Blob():
         self.jumping = False
         self.pos = [windowSize[0]//8, windowSize[1]-self.blobSize]
         self.collision = 0
-        self.jumpVel = 20
+        self.jumpVel = 25
         self.fallVel = 1
         self.blobShow = 1
         self.onGround = True
+        self.jumpCount = 0
+        self.falling = False
+        self.overCount = 0
 
     def changeDraw(self):
         if self.blobShow:
@@ -31,44 +34,92 @@ class Blob():
 
     def getSize(self):
         return self.blobSize
+
+    def groundUpdate(self):
+        if self.pos[1] >= self.windowSize[1]-self.blobSize:
+            self.pos[1] = self.windowSize[1]-self.blobSize
+            self.onGround = True
+            self.jumpCount = 0
     
     def move(self, y):
         obstacle = False
-        self.onGround = False
         if y < 0 and self.collision == -1:
             obstacle = True
-        if y > 0 and self.collision == 1:
+        if self.collision == 1:
             obstacle = True
-        if self.pos[1] > self.windowSize[1]-self.blobSize:
+        if self.pos[1] >= self.windowSize[1]-self.blobSize:
             self.pos[1] = self.windowSize[1]-self.blobSize
-            obstacle = True
             self.onGround = True
+        else:
+            self.onGround = False
         if not obstacle:
-            self.pos[1] += y
+            if y > 1 and self.onGround:
+                pass
+            else:
+                self.pos[1] += y
             return True
         return False
 
     def jump(self):
-        if self.jumpVel > 2:
-            self.move(-self.jumpVel)
-            self.jumpVel -= self.jumpVel/10
-        else:
-            self.jumping = False
-            self.jumpVel = 20
+        self.jumpCount += 1
+        self.jumping = True
+        self.jumpVel = 25
+
+    def jumpCalc(self):
+        if self.jumping:
+                if self.jumpVel > 2:
+                    self.move(-self.jumpVel)
+                    self.jumpVel -= self.jumpVel/10
+                else:
+                    self.jumping = False
+                    self.jumpVel = 20
+
 
     def fall(self):
         falling = self.move(self.fallVel)
+        if self.fallVel > 20:
+            self.fallVel = 20
         if falling:
             self.fallVel += self.fallVel*0.1
         else:
             self.fallVel = 1
+
+    def check_collision(self, pos, size):
+        collision = False
+        Xd = 0
+        Yd = 0
+        if self.pos[0]+self.blobSize >= pos[0] and self.pos[0] <= pos[0]+size:
+            if self.pos[1]+self.blobSize >= pos[1] and self.pos[1] <= pos[1]+size:
+                Yd = (self.pos[1]+self.blobSize)-pos[1]
+                collision = True
+                print("collided")
+
+        print(Yd)
+
+        if collision:
+            if Yd and Yd < 35:
+                print("vertical")
+                self.collision = 1
+                self.fallVel = 1
+                self.pos[1] = pos[1]-self.blobSize
+                self.jumpCount = 0
+                return 1
+            else:
+                self.overCount += 1
+                if self.overCount > 2 and self.collision != 1:
+                    return -1
+                else:
+                    return 0
+        else:
+            self.collision = 0
+            return 0
 
 class Block():
     def __init__(self, windowSize):
         self.windowSize = windowSize
         self.blockSize = windowSize[1]//7
         self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle.png"), (self.blockSize, self.blockSize))
-        self.pos = [windowSize[0], windowSize[1]-(self.blockSize*random.randint(1,2))]
+        self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*random.randint(1,2))]
 
     def getPos(self):
         return self.pos
@@ -81,17 +132,6 @@ class Block():
 
     def draw(self, screen):
         screen.blit(self.blockImg, self.pos)
-
-def collision(Pos1, Size1, Pos2, Size2):
-    if Pos1[0]+Size1 >= Pos2[0]:
-        if Pos1[1]+Size1 > Pos2[1] and Pos1[1] < Pos2[1]+Size2:
-            return 0
-    elif Pos1[1]+Size1 >= Pos2[1]:
-        if Pos1[0]+Size1 > Pos2[0] and Pos1[0] < Pos2[0]+Size2:
-            print("on block")
-            return 1
-    else:
-        return 2
             
 
 def game():
@@ -106,6 +146,7 @@ def game():
     jumpLimit = 2
     jumpCount = 0
     blocks = []
+    over = False
 
     changeDrawing = pygame.USEREVENT
     pygame.time.set_timer(changeDrawing, 500)
@@ -126,50 +167,52 @@ def game():
             if event.type == pygame.QUIT:
                 done = True
 
-            if event.type == changeDrawing:
-                blob.changeDraw()
+            if not over:
+                if event.type == changeDrawing:
+                    blob.changeDraw()
 
-            if event.type == spawnBlock:
-                luck = random.randint(0, 4)
-                if not luck:
-                    blocks.append(Block(size))
+                if event.type == spawnBlock:
+                    luck = random.randint(0, 4)
+                    if not luck:
+                        blocks.append(Block(size))
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
-                    if not jumpCount >= jumpLimit:
-                        jumpCount += 1
-                        blob.jumping = True
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
+                        if blob.jumpCount < 1:
+                            blob.jump()
     
         # --- Game logic should go here
+        if not over:
+            #print(blob.jumpCount)
+            for block in blocks:
+                if blob.check_collision(block.getPos(), block.getSize()) == -1:
+                    over = True
 
-        # collision 
-        for block in blocks:
-            if collision(blob.getPos(), blob.getSize(), block.getPos(), block.getSize()) == 1:
-                blob.collision = 1
-            elif collision(blob.getPos(), blob.getSize(), block.getPos(), block.getSize()) == 0:
-                print("game over")
-            elif collision(blob.getPos(), blob.getSize(), block.getPos(), block.getSize()) == 2:
-                blob.collision = 0
+            # moving background
+            for x in range(len(bg)):
+                bg[x] -= bg_velocity
+            if bg[0] <= -size[0]:
+                bg[0] = 0
+                bg[1] = size[0]
 
-        # moving background
-        for x in range(len(bg)):
-            bg[x] -= bg_velocity
-        if bg[0] <= -size[0]:
-            bg[0] = 0
-            bg[1] = size[0]
+            # moving blob, really just jumping and falling
+            blob.groundUpdate()
+            if not blob.jumping:
+                blob.fall()
+            else:
+                blob.fallVel = 1
+                blob.jumpCalc()
+            #if blob.onGround:
+            #    jumpCount = 0
 
-        # moving blob, really just jumping and falling
-        if not blob.jumping:
-            blob.fall()
-        else:
-            blob.fallVel = 1
-            blob.jump()
-        if blob.onGround:
-            jumpCount = 0
+            # remove off screen blocks
+            for index, block in enumerate(blocks):
+                if block.getPos()[0] <= -block.getSize():
+                    del blocks[index]
 
-        # moving blocks
-        for block in blocks:
-            block.move(-5)
+            # moving blocks
+            for block in blocks:
+                block.move(-5)
     
         # --- Screen-clearing code goes here
         for x in bg:
