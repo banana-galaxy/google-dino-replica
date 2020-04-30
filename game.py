@@ -116,7 +116,7 @@ class Block():
     def __init__(self, windowSize):
         self.windowSize = windowSize
         self.blockSize = windowSize[1]//7
-        self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle1.png"), (self.blockSize, self.blockSize))
+        self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle.png"), (self.blockSize, self.blockSize))
         self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*random.randint(1,2))]
 
     def getPos(self):
