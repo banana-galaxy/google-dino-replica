@@ -58,6 +58,9 @@ class Blob():
             else:
                 self.pos[1] += y
             return True
+        if obstacle and self.collision == 1:
+            if y < 0:
+                self.pos[1] += y
         return False
 
     def jump(self):
@@ -93,20 +96,19 @@ class Blob():
                 Yd = (self.pos[1]+self.blobSize)-pos[1]
                 collision = True
 
+        #print(collision, Yd)
+
         if collision:
-            if Yd and Yd < 35:
+            if Yd < 35 and Yd >= 0:
                 self.collision = 1
                 self.fallVel = 1
                 self.pos[1] = pos[1]-self.blobSize
                 self.jumpCount = 0
                 return 1
             else:
-                self.overCount += 1
-                if self.overCount > 2 and self.collision != 1:
-                    return -1
-                else:
-                    return 0
+                return -1
         else:
+            #self.overCount = 0
             self.collision = 0
             return 0
 
@@ -114,7 +116,7 @@ class Block():
     def __init__(self, windowSize):
         self.windowSize = windowSize
         self.blockSize = windowSize[1]//7
-        self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle.png"), (self.blockSize, self.blockSize))
+        self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle1.png"), (self.blockSize, self.blockSize))
         self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*random.randint(1,2))]
 
     def getPos(self):
@@ -146,8 +148,8 @@ def game():
     over = False
     score = 0
     prevScore = 0
-    fps = 60
     scored_blocks = []
+    speed = -5
 
     halfSec = pygame.USEREVENT
     pygame.time.set_timer(halfSec, 500)
@@ -194,12 +196,24 @@ def game():
 
             # adjusting fps every 100 score
             if score - prevScore == 100:
-                fps += 10
+                speed -= 2
                 prevScore = score
 
-            #print(blob.jumpCount)
-            for block in blocks:
-                if blob.check_collision(block.getPos(), block.getSize()) == -1:
+            # determine closest block to blob
+            if len(blocks) >= 1:
+                closest = blocks[0]
+                for index, block in enumerate(blocks):
+                    if index != 0:
+                        CDelta = closest.getPos()[0] - blob.getPos()[0]
+                        BDelta = block.getPos()[0] - blob.getPos()[0]
+                        if CDelta < 0:
+                            CDelta = -CDelta
+                        if BDelta < 0:
+                            BDelta = -BDelta
+                        if BDelta < CDelta:
+                            closest = block
+                # check for collision with closest block
+                if blob.check_collision(closest.getPos(), closest.getSize()) == -1:
                     over = True
 
             # moving background
@@ -226,7 +240,7 @@ def game():
 
             # moving blocks
             for block in blocks:
-                block.move(-5)
+                block.move(speed)
     
         # --- Screen-clearing code
         for x in bg:
@@ -236,6 +250,13 @@ def game():
         blob.draw(screen)
         for block in blocks:
             block.draw(screen)
+
+        """ if len(blocks) >= 1:
+            # Select the font to use, size, bold, italics
+            font = pygame.font.SysFont('Calibri', size[1]//20, True, False)
+            # text, anti-aliased, color
+            text = font.render(f"Closest",True,BLACK)
+            screen.blit(text, [closest.pos[0], closest.pos[1]-closest.getSize()/5]) """
 
         # --- score
         # Select the font to use, size, bold, italics
@@ -248,7 +269,7 @@ def game():
         # Select the font to use, size, bold, italics
         font = pygame.font.SysFont('Calibri', size[1]//10, True, False)
         # text, anti-aliased, color
-        text = font.render(f"SPEED: {fps-60}",True,BLACK)
+        text = font.render(f"SPEED: {((-speed)-5)//2*10}",True,BLACK)
         screen.blit(text, [size[0]/15, size[1]/15*2])
     
         # --- Update the screen
