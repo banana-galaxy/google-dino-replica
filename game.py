@@ -181,7 +181,6 @@ def game():
     
         # --- Game logic should go here
         if not over:
-            print(fps)
 
             # scoring when blob passes block
             for block in blocks:
@@ -189,8 +188,8 @@ def game():
                     if blob.getPos()[0] > block.getPos()[0]:
                         score += 10
                         scored_blocks.append(block)
-            for index, block in enumerate(scored_blocks):
-                if not block in blocks:
+            for index, blocky in enumerate(scored_blocks):
+                if not blocky in blocks:
                     del scored_blocks[index]
 
             # adjusting fps every 100 score
