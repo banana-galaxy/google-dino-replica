@@ -92,13 +92,9 @@ class Blob():
             if self.pos[1]+self.blobSize >= pos[1] and self.pos[1] <= pos[1]+size:
                 Yd = (self.pos[1]+self.blobSize)-pos[1]
                 collision = True
-                print("collided")
-
-        print(Yd)
 
         if collision:
             if Yd and Yd < 35:
-                print("vertical")
                 self.collision = 1
                 self.fallVel = 1
                 self.pos[1] = pos[1]-self.blobSize
@@ -142,16 +138,19 @@ def game():
     bg = [0, size[0]]
     bg_velocity = 0.5
     WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
     count = 0
     jumpLimit = 2
     jumpCount = 0
     blocks = []
     over = False
+    score = 0
+    prevScore = 0
+    fps = 60
+    scored_blocks = []
 
-    changeDrawing = pygame.USEREVENT
-    pygame.time.set_timer(changeDrawing, 500)
-    spawnBlock = pygame.USEREVENT
-    pygame.time.set_timer(spawnBlock, 500)
+    halfSec = pygame.USEREVENT
+    pygame.time.set_timer(halfSec, 500)
 
     screen = pygame.display.set_mode(size)
     
@@ -168,10 +167,9 @@ def game():
                 done = True
 
             if not over:
-                if event.type == changeDrawing:
+                if event.type == halfSec:
                     blob.changeDraw()
 
-                if event.type == spawnBlock:
                     luck = random.randint(0, 4)
                     if not luck:
                         blocks.append(Block(size))
@@ -183,6 +181,23 @@ def game():
     
         # --- Game logic should go here
         if not over:
+            print(fps)
+
+            # scoring when blob passes block
+            for block in blocks:
+                if not block in scored_blocks:
+                    if blob.getPos()[0] > block.getPos()[0]:
+                        score += 10
+                        scored_blocks.append(block)
+            for index, block in enumerate(scored_blocks):
+                if not block in blocks:
+                    del scored_blocks[index]
+
+            # adjusting fps every 100 score
+            if score - prevScore == 100:
+                fps += 10
+                prevScore = score
+
             #print(blob.jumpCount)
             for block in blocks:
                 if blob.check_collision(block.getPos(), block.getSize()) == -1:
@@ -214,16 +229,30 @@ def game():
             for block in blocks:
                 block.move(-5)
     
-        # --- Screen-clearing code goes here
+        # --- Screen-clearing code
         for x in bg:
             screen.blit(bg_img, (x,0))
     
-        # --- Drawing code should go here
+        # --- Drawing code
         blob.draw(screen)
         for block in blocks:
             block.draw(screen)
+
+        # --- score
+        # Select the font to use, size, bold, italics
+        font = pygame.font.SysFont('Calibri', size[1]//10, True, False)
+        # text, anti-aliased, color
+        text = font.render(f"SCORE: {score}",True,BLACK)
+        screen.blit(text, [size[0]/15, size[1]/15])
+
+        # --- speed
+        # Select the font to use, size, bold, italics
+        font = pygame.font.SysFont('Calibri', size[1]//10, True, False)
+        # text, anti-aliased, color
+        text = font.render(f"SPEED: {fps-60}",True,BLACK)
+        screen.blit(text, [size[0]/15, size[1]/15*2])
     
-        # --- Go ahead and update the screen with what we've drawn.
+        # --- Update the screen
         pygame.display.flip()
     
         # --- Limit to 60 frames per second
