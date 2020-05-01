@@ -16,6 +16,9 @@ class Blob():
         self.jumpCount = 0
         self.falling = False
         self.overCount = 0
+        self.states = ["on ground", "jumping", "falling", "on block"]
+        self.state = self.states[0]
+        self.velocity = 0
 
     def changeDraw(self):
         if self.blobShow:
@@ -40,6 +43,11 @@ class Blob():
             self.pos[1] = self.windowSize[1]-self.blobSize
             self.onGround = True
             self.jumpCount = 0
+            self.velocity = 0
+
+    def checkGround(self):
+        if self.pos[1] >= self.windowSize[1]-self.blobSize:
+            self.state = self.states[0]
     
     def move(self, y):
         obstacle = False
@@ -50,17 +58,23 @@ class Blob():
         if self.pos[1] >= self.windowSize[1]-self.blobSize:
             self.pos[1] = self.windowSize[1]-self.blobSize
             self.onGround = True
+            self.state = self.states[0]
         else:
             self.onGround = False
         if not obstacle:
             if y > 1 and self.onGround:
+                self.state = self.states[0]
                 pass
             else:
                 self.pos[1] += y
+                self.velocity = y
             return True
         if obstacle and self.collision == 1:
             if y < 0:
                 self.pos[1] += y
+                self.velocity = y
+                return True
+        self.velocity = 0
         return False
 
     def jump(self):
@@ -73,6 +87,7 @@ class Blob():
                 if self.jumpVel > 2:
                     self.move(-self.jumpVel)
                     self.jumpVel -= self.jumpVel/10
+                    self.state = self.states[1]
                 else:
                     self.jumping = False
                     self.jumpVel = 20
@@ -84,6 +99,7 @@ class Blob():
             self.fallVel = 20
         if falling:
             self.fallVel += self.fallVel*0.1
+            self.state = self.states[2]
         else:
             self.fallVel = 1
 
@@ -104,6 +120,7 @@ class Blob():
                 self.fallVel = 1
                 self.pos[1] = pos[1]-self.blobSize
                 self.jumpCount = 0
+                self.state = self.states[3]
                 return 1
             else:
                 return -1
@@ -117,7 +134,11 @@ class Block():
         self.windowSize = windowSize
         self.blockSize = windowSize[1]//7
         self.blockImg = pygame.transform.scale(pygame.image.load("leblocksingle.png"), (self.blockSize, self.blockSize))
-        self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*random.randint(1,2))]
+        number = random.randint(0,2)
+        if number == 0:
+            self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*2)]
+        else:
+            self.pos = [windowSize[0], windowSize[1]-((self.blockSize+(self.blockSize/10))*1)]
 
     def getPos(self):
         return self.pos
@@ -150,9 +171,12 @@ def game():
     prevScore = 0
     scored_blocks = []
     speed = -5
+    time = 500
+    debug = False
+    superDebug = False
 
     halfSec = pygame.USEREVENT
-    pygame.time.set_timer(halfSec, 500)
+    pygame.time.set_timer(halfSec, time)
 
     screen = pygame.display.set_mode(size)
     
@@ -180,6 +204,18 @@ def game():
                     if event.key == pygame.K_SPACE or event.key == pygame.K_UP:
                         if blob.jumpCount < 1:
                             blob.jump()
+                    if event.key == pygame.K_y:
+                        if debug:
+                            debug = False
+                            superDebug = False
+                        else:
+                            debug = True
+                    if event.key == pygame.K_u:
+                            if debug:
+                                if superDebug:
+                                    superDebug = False
+                                else:
+                                    superDebug = True
     
         # --- Game logic should go here
         if not over:
@@ -196,6 +232,8 @@ def game():
 
             # adjusting fps every 100 score
             if score - prevScore == 100:
+                time -= int(time*0.2)
+                pygame.time.set_timer(halfSec, time)
                 speed -= 2
                 prevScore = score
 
@@ -230,6 +268,7 @@ def game():
             else:
                 blob.fallVel = 1
                 blob.jumpCalc()
+            blob.checkGround()
             #if blob.onGround:
             #    jumpCount = 0
 
@@ -248,15 +287,23 @@ def game():
     
         # --- Drawing code
         blob.draw(screen)
+
+        if debug:
+            # Select the font to use, size, bold, italics
+            font = pygame.font.SysFont('Calibri', size[1]//15, True, False)
+            # text, anti-aliased, color
+            text = font.render(blob.state,True,BLACK)
+            screen.blit(text, [blob.pos[0], blob.pos[1]-blob.blobSize/5])
+
         for block in blocks:
             block.draw(screen)
 
-        """ if len(blocks) >= 1:
+        if len(blocks) >= 1 and debug:
             # Select the font to use, size, bold, italics
             font = pygame.font.SysFont('Calibri', size[1]//20, True, False)
             # text, anti-aliased, color
             text = font.render(f"Closest",True,BLACK)
-            screen.blit(text, [closest.pos[0], closest.pos[1]-closest.getSize()/5]) """
+            screen.blit(text, [closest.pos[0], closest.pos[1]-closest.getSize()/5])
 
         # --- score
         # Select the font to use, size, bold, italics
@@ -271,6 +318,26 @@ def game():
         # text, anti-aliased, color
         text = font.render(f"SPEED: {((-speed)-5)//2*10}",True,BLACK)
         screen.blit(text, [size[0]/15, size[1]/15*2])
+
+        # --- blocks amount when debug enabled
+        # Select the font to use, size, bold, italics
+        font = pygame.font.SysFont('Calibri', size[1]//15, True, False)
+        # text, anti-aliased, color
+        text = font.render(f"total blocks: {len(blocks)}",True,BLACK)
+        if debug:
+            screen.blit(text, [size[0]/15, size[1]/15*3])
+
+        # --- blocks speed when super debug enabled
+        # text, anti-aliased, color
+        text = font.render(f"block speed: {speed}",True,BLACK)
+        if superDebug:
+            screen.blit(text, [size[0]/15, size[1]/15*4])
+
+        # --- blob speed when super debug enabled
+        # text, anti-aliased, color
+        text = font.render(f"blob speed: {int(blob.velocity)}",True,BLACK)
+        if superDebug:
+            screen.blit(text, [size[0]/15, size[1]/15*5])
     
         # --- Update the screen
         pygame.display.flip()
