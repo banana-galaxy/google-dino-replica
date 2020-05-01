@@ -128,6 +128,16 @@ class Blob():
             #self.overCount = 0
             self.collision = 0
             return 0
+    def reset(self):
+        self.pos[1] = self.windowSize[1]-self.blobSize
+        self.onGround = True
+        self.jumpCount = 0
+        self.jumping = False
+        self.jumpVel = 25
+        self.fallVel = 1
+        self.velocity = 0
+        self.collision = 0
+        self.state = self.states[0]
 
 class Block():
     def __init__(self, windowSize):
@@ -162,8 +172,6 @@ def game():
     bg_velocity = 0.5
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
-    count = 0
-    jumpLimit = 2
     jumpCount = 0
     blocks = []
     over = False
@@ -211,11 +219,27 @@ def game():
                         else:
                             debug = True
                     if event.key == pygame.K_u:
-                            if debug:
-                                if superDebug:
-                                    superDebug = False
-                                else:
-                                    superDebug = True
+                        if debug:
+                            if superDebug:
+                                superDebug = False
+                            else:
+                                superDebug = True
+            else:
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                            if over:
+                                over = False
+                                blocks = []
+                                over = False
+                                score = 0
+                                prevScore = 0
+                                speed = -5
+                                time = 500
+                                pygame.time.set_timer(halfSec, time)
+                                scored_blocks = []
+                                blob.reset()
+
+
     
         # --- Game logic should go here
         if not over:
