@@ -169,7 +169,7 @@ def game():
     blob = Blob(size)
     bg_img = pygame.transform.scale(pygame.image.load("bg.png"), (size[0], size[1]))
     bg = [0, size[0]]
-    bg_velocity = 0.5
+    bg_velocity = 0.08
     WHITE = (255, 255, 255)
     BLACK = (0, 0, 0)
     jumpCount = 0
@@ -179,7 +179,7 @@ def game():
     prevScore = 0
     scored_blocks = []
     speed = -5
-    time = 500
+    time = 1000
     debug = False
     superDebug = False
 
@@ -254,7 +254,7 @@ def game():
                 if not blocky in blocks:
                     del scored_blocks[index]
 
-            # adjusting fps every 100 score
+            # adjusting speed every 100 score
             if score - prevScore == 100:
                 time -= int(time*0.2)
                 pygame.time.set_timer(halfSec, time)
@@ -312,54 +312,48 @@ def game():
         # --- Drawing code
         blob.draw(screen)
 
+        mainFont = pygame.font.Font('joystix.ttf', size[1]//15)
+        debugFont = pygame.font.Font('joystix.ttf', size[1]//25)#, True, False)
+        superDebugFont = pygame.font.Font('joystix.ttf', size[1]//30)
+
         if debug:
-            # Select the font to use, size, bold, italics
-            font = pygame.font.SysFont('Calibri', size[1]//15, True, False)
             # text, anti-aliased, color
-            text = font.render(blob.state,True,BLACK)
-            screen.blit(text, [blob.pos[0], blob.pos[1]-blob.blobSize/5])
+            text = debugFont.render(blob.state,True,BLACK)
+            screen.blit(text, [blob.pos[0]-blob.blobSize/3, blob.pos[1]-blob.blobSize/3])
 
         for block in blocks:
             block.draw(screen)
 
         if len(blocks) >= 1 and debug:
-            # Select the font to use, size, bold, italics
-            font = pygame.font.SysFont('Calibri', size[1]//20, True, False)
             # text, anti-aliased, color
-            text = font.render(f"Closest",True,BLACK)
-            screen.blit(text, [closest.pos[0], closest.pos[1]-closest.getSize()/5])
+            text = debugFont.render(f"closest",True,BLACK)
+            screen.blit(text, [closest.pos[0]-closest.getSize()/4, closest.pos[1]-closest.getSize()/3])
 
         # --- score
-        # Select the font to use, size, bold, italics
-        font = pygame.font.SysFont('Calibri', size[1]//10, True, False)
         # text, anti-aliased, color
-        text = font.render(f"SCORE: {score}",True,BLACK)
+        text = mainFont.render(f"SCORE: {score}",True,BLACK)
         screen.blit(text, [size[0]/15, size[1]/15])
 
         # --- speed
-        # Select the font to use, size, bold, italics
-        font = pygame.font.SysFont('Calibri', size[1]//10, True, False)
         # text, anti-aliased, color
-        text = font.render(f"SPEED: {((-speed)-5)//2*10}",True,BLACK)
+        text = mainFont.render(f"SPEED: {((-speed)-5)//2*10}",True,BLACK)
         screen.blit(text, [size[0]/15, size[1]/15*2])
 
         # --- blocks amount when debug enabled
-        # Select the font to use, size, bold, italics
-        font = pygame.font.SysFont('Calibri', size[1]//15, True, False)
         # text, anti-aliased, color
-        text = font.render(f"total blocks: {len(blocks)}",True,BLACK)
+        text = debugFont.render(f"total blocks: {len(blocks)}",True,BLACK)
         if debug:
             screen.blit(text, [size[0]/15, size[1]/15*3])
 
         # --- blocks speed when super debug enabled
         # text, anti-aliased, color
-        text = font.render(f"block speed: {speed}",True,BLACK)
+        text = superDebugFont.render(f"block speed: {speed}",True,BLACK)
         if superDebug:
             screen.blit(text, [size[0]/15, size[1]/15*4])
 
         # --- blob speed when super debug enabled
         # text, anti-aliased, color
-        text = font.render(f"blob speed: {int(blob.velocity)}",True,BLACK)
+        text = superDebugFont.render(f"blob speed: {int(blob.velocity)}",True,BLACK)
         if superDebug:
             screen.blit(text, [size[0]/15, size[1]/15*5])
     
