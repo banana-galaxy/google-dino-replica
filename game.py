@@ -168,6 +168,7 @@ def game():
     size = (halfScreen, int(halfScreen*0.71))
     blob = Blob(size)
     bg_img = pygame.transform.scale(pygame.image.load("bg.png"), (size[0], size[1]))
+    over_img = pygame.transform.scale(pygame.image.load("game_over.png"), (size[0], size[1]))
     bg = [0, size[0]]
     bg_velocity = 0.08
     WHITE = (255, 255, 255)
@@ -226,18 +227,17 @@ def game():
                                 superDebug = True
             else:
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
-                            if over:
-                                over = False
-                                blocks = []
-                                over = False
-                                score = 0
-                                prevScore = 0
-                                speed = -5
-                                time = 500
-                                pygame.time.set_timer(halfSec, time)
-                                scored_blocks = []
-                                blob.reset()
+                    if over:
+                        over = False
+                        blocks = []
+                        over = False
+                        score = 0
+                        prevScore = 0
+                        speed = -5
+                        time = 500
+                        pygame.time.set_timer(halfSec, time)
+                        scored_blocks = []
+                        blob.reset()
 
 
     
@@ -356,6 +356,9 @@ def game():
         text = superDebugFont.render(f"blob speed: {int(blob.velocity)}",True,BLACK)
         if superDebug:
             screen.blit(text, [size[0]/15, size[1]/15*5])
+
+        if over:
+            screen.blit(over_img, (0, 0))
     
         # --- Update the screen
         pygame.display.flip()
